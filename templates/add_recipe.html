@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}发布食谱 - 美食食谱网站{% endblock %}
+{% block content %}
+<h2 class="mb-4 text-success">{{ '编辑食谱' if edit else '发布新食谱' }}</h2>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="mb-4 text-success">发布新食谱</h2>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                        {% for error in form.title.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control") }}
+                        {% for error in form.description.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.ingredients.label(class="form-label") }}
+                        {{ form.ingredients(class="form-control") }}
+                        {% for error in form.ingredients.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.instructions.label(class="form-label") }}
+                        {{ form.instructions(class="form-control") }}
+                        {% for error in form.instructions.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.cooking_time.label(class="form-label") }}
+                            {{ form.cooking_time(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.difficulty.label(class="form-label") }}
+                            {{ form.difficulty(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.servings.label(class="form-label") }}
+                            {{ form.servings(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.image_url.label(class="form-label") }}
+                        {{ form.image_url(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.categories.label(class="form-label") }}
+                        {{ form.categories(class="form-select", multiple=True) }}
+                        {% for error in form.categories.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-success btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
