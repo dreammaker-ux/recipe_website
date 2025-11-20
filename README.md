@@ -69,16 +69,16 @@ pip install -r requirements.txt
 
 ## 目录结构 
 
-recipe_website/ │ 
-                ├── app.py                # 主程序入口 
-                ├── models.py             # 数据库模型 
-                ├── forms.py              # 表单定义 
-                ├── utils.py              # 工具函数 
-                ├── db.py                 # 数据库实例 
-                ├── config.py             # 配置文件 
-                ├── requirements.txt      # 依赖列表 
-                ├── static/               # 静态资源（css/img/js等） 
-                ├── templates/            # Jinja2模板 
-                ├── migrations/           # 数据库迁移文件夹 
-                └── README.md             # 项目说明
+recipe_website/
+├── app.py                # 主程序入口 
+├── models.py             # 数据库模型 
+├── forms.py              # 表单定义 
+├── utils.py              # 工具函数 
+├── db.py                 # 数据库实例 
+├── config.py             # 配置文件 
+├── requirements.txt      # 依赖列表 
+├── static/               # 静态资源（css/img/js等） 
+├── templates/            # Jinja2模板 
+├── migrations/           # 数据库迁移文件夹 
+└── README.md             # 项目说明
    
