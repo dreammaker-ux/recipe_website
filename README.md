@@ -67,7 +67,7 @@ pip install -r requirements.txt
 - 消息通知
 - 食谱分类浏览与搜索
 
-## 目录结构
+## 目录结构 
 
 recipe_website/ │ 
                 ├── app.py                # 主程序入口 
