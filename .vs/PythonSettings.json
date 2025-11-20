@@ -1,3 +1,5 @@
 {
-  "Interpreter": "env\\Scripts\\python.exe"
+  "Interpreter": "Global|PythonCore|3.12",
+  "SuppressPackageInstallationPrompt": true,
+  "SuppressConfigureTestFrameworkPrompt": "true"
 }

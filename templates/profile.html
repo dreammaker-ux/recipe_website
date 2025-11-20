@@ -1,11 +1,95 @@
 {% extends "base.html" %}
-{% block title %}个人中心 - 美食食谱网站{% endblock %}
+{% block title %}个人中心 - 食光慢煮{% endblock %}
 {% block content %}
+<div class="mb-3 text-center">
+    {% if user.avatar_url %}
+    <img src="{{ user.avatar_url }}" alt="头像" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover;">
+    {% else %}
+    <img src="{{ url_for('static', filename='img/default_avatar.png') }}" alt="默认头像" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover;">
+    {% endif %}
+    <h2 class="mt-2">{{ user.username }} 的个人主页</h2>
+    <div class="mt-2">
+        <span class="badge bg-warning text-dark">Lv.{{ user.level }}</span>
+        <div class="progress mt-2" style="height: 18px; max-width: 300px; margin: 0 auto;">
+            <div class="progress-bar bg-success" role="progressbar"
+                 style="width: {{ (user.exp or 0)|int % 100 }}%;"
+                 aria-valuenow="{{ (user.exp or 0)|int % 100 }}" aria-valuemin="0" aria-valuemax="100">
+                {{ (user.exp or 0)|int % 100 }}/100 经验
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .activity-list {
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .activity-item {
+        background: rgba(30,30,30,0.7);
+        border-radius: 8px;
+        margin-bottom: 24px;
+        padding: 18px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: block;
+        width: 100%;
+    }
+
+        .activity-item .activity-img-wrap {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .activity-item img {
+            max-width: 320px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+</style>
+
 <div class="row">
-    <div class="col-md-6">
+    <!-- 左侧：个人信息、编辑、食谱、收藏 -->
+    <div class="col-md-3">
+        {% if can_edit %}
+        <form method="POST" enctype="multipart/form-data" class="mb-4">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control", value=user.username) }}
+            </div>
+            <div class="mb-3">
+                {{ form.avatar.label(class="form-label") }}
+                {{ form.avatar(class="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+        </form>
+        {% endif %}
+
+        <p>
+            <a href="{{ url_for('following_list', user_id=user.id) }}">
+                关注：{{ user.followed.count() }}
+            </a>
+            |
+            <a href="{{ url_for('followers_list', user_id=user.id) }}">
+                粉丝：{{ user.followers.count() }}
+            </a>
+        </p>
+
+        {% if current_user.is_authenticated and current_user.id != user.id %}
+        {% if current_user.is_following(user) %}
+        <form method="POST" action="{{ url_for('unfollow', user_id=user.id) }}" style="display:inline;">
+            <button class="btn btn-outline-secondary btn-sm">取消关注</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('follow', user_id=user.id) }}" style="display:inline;">
+            <button class="btn btn-success btn-sm">关注</button>
+        </form>
+        {% endif %}
+        {% endif %}
+
         <h3>我的食谱</h3>
         {% if user_recipes %}
-        <ul class="list-group mb-4">
+        <ul class="list-group mb-4" style="max-width: 400px;">
             {% for recipe in user_recipes %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a>
@@ -16,11 +100,10 @@
         {% else %}
         <p class="text-muted">暂无发布的食谱</p>
         {% endif %}
-    </div>
-    <div class="col-md-6">
+
         <h3>我的收藏</h3>
         {% if favorite_recipes %}
-        <ul class="list-group mb-4">
+        <ul class="list-group mb-4" style="max-width: 400px;">
             {% for recipe in favorite_recipes %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a>
@@ -31,6 +114,242 @@
         {% else %}
         <p class="text-muted">暂无收藏的食谱</p>
         {% endif %}
+
+        <h3>通知</h3>
+        {% if notifications %}
+        <a href="{{ url_for('profile', user_id=current_user.id) }}">
+            {% if unread_notifications_count > 0 %}
+            <span class="badge bg-danger">{{ unread_notifications_count }}</span>
+            {% endif %}
+        </a>
+        <ul class="list-group mb-4" style="max-width: 400px;">
+            {% for n in notifications if not n.is_read %}
+            <li class="list-group-item list-group-item-info">
+                <form method="post" action="{{ url_for('read_notification', notification_id=n.id) }}" style="display:inline;" id="notify-form-{{ n.id }}">
+                    <button type="button"
+                            onclick="handleNotificationClick(
+                            {{ n.id }},
+                            {{ n.sender_id|default('null') }},
+                            '{{ n.sender_username|default('') }}',
+                            '{{ n.type|default('') }}'
+                        )">
+
+                        {% if n.type == 'friend_message' %}
+                        <span class="badge bg-primary me-1">好友消息</span>
+                        {% endif %}
+                        {{ n.message }}
+                        <span class="badge bg-light text-muted float-end">{{ n.created_at.strftime('%Y-%m-%d') }}</span>
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+            {% if notifications|selectattr('is_read', 'equalto', False)|list|length == 0 %}
+            <li class="list-group-item text-muted">暂无通知</li>
+            {% endif %}
+        </ul>
+        {% else %}
+        <p class="text-muted">暂无通知</p>
+        {% endif %}
+
+        <h3>我的成就</h3>
+        {% if user.achievements.count() > 0 %}
+        <ul class="list-group mb-4" style="max-width: 400px;">
+            {% for ua in user.achievements.order_by(UserAchievement.achieved_at.desc()) %}
+            <li class="list-group-item d-flex align-items-center">
+                <img src="{{ url_for('static', filename='icons/' ~ ua.achievement.icon) }}" alt="{{ ua.achievement.name }}" style="width:32px;height:32px;margin-right:10px;">
+                <div>
+                    <b>{{ ua.achievement.name }}</b>
+                    <div class="text-muted" style="font-size:13px;">{{ ua.achievement.description }}</div>
+                    <span class="badge bg-secondary">{{ ua.achieved_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">暂无成就</p>
+        {% endif %}
+
+        <h3>我的勋章</h3>
+        {% if user.badges.count() > 0 %}
+        <ul class="list-group mb-4" style="max-width: 400px;">
+            {% for ub in user.badges.order_by(UserBadge.awarded_at.desc()) %}
+            <li class="list-group-item d-flex align-items-center">
+                <img src="{{ url_for('static', filename='icons/' ~ ub.badge.icon) }}" alt="{{ ub.badge.name }}" style="width:32px;height:32px;margin-right:10px;">
+                <div>
+                    <b>{{ ub.badge.name }}</b>
+                    <div class="text-muted" style="font-size:13px;">{{ ub.badge.description }}</div>
+                    <span class="badge bg-secondary">{{ ub.awarded_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">暂无勋章</p>
+        {% endif %}
+
+    </div>
+
+    <!-- 右侧：动态/打卡记录 -->
+    <div class="col-md-9">
+        <h3>我的动态</h3>
+        {% if current_user.is_authenticated and current_user.id == user.id %}
+        <a href="{{ url_for('add_post') }}" class="btn btn-success mb-3">发表动态</a>
+        {% endif %}
+        <ul class="activity-list">
+            {% for act in activities %}
+            <li class="activity-item">
+                <div class="activity-summary">
+                    {% if act.type == 'recipe' %}
+                    发布了新食谱：<a href="{{ url_for('recipe_detail', recipe_id=act.obj.id) }}">{{ act.obj.title }}</a>
+                    <span class="text-muted">{{ act.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% elif act.type == 'cook_record' %}
+                    烹饪打卡：<a href="{{ url_for('recipe_detail', recipe_id=act.obj.recipe_id) }}">{{ act.obj.recipe.title }}</a>
+                    <span class="text-muted">{{ act.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% elif act.type == 'comment' %}
+                    评论了食谱：<a href="{{ url_for('recipe_detail', recipe_id=act.obj.recipe_id) }}">{{ act.obj.recipe.title }}</a>
+                    <span class="text-muted">{{ act.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% elif act.type == 'post' %}
+                    发布了新动态
+                    <span class="text-muted">{{ act.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% endif %}
+                </div>
+                <div class="activity-detail">
+                    {% if act.type == 'recipe' %}
+                    <div>简介：{{ act.obj.description }}</div>
+                    {% if act.obj.image_url %}
+                    <div class="activity-img-wrap">
+                        <img src="{{ act.obj.image_url }}">
+                    </div>
+                    {% endif %}
+                    {% elif act.type == 'post' %}
+                    <div>{{ act.obj.content }}</div>
+                    {% if act.obj.image_url %}
+                    <div class="activity-img-wrap">
+                        <img src="{{ act.obj.image_url }}">
+                    </div>
+                    {% endif %}
+                    <!-- 这里是动态的操作按钮和评论区 -->
+                    <div class="mt-2">
+                        <!-- 编辑/删除仅本人可见 -->
+                        {% if current_user.is_authenticated and current_user.id == act.obj.user_id %}
+                        <a href="{{ url_for('edit_post', post_id=act.obj.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+                        <form method="post" action="{{ url_for('delete_post', post_id=act.obj.id) }}" style="display:inline;" onsubmit="return confirm('确定删除该动态吗？');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                        </form>
+                        {% endif %}
+                        <!-- 点赞/取消点赞 -->
+                        <form method="post" action="{% if act.obj.is_liked_by(current_user) %}{{ url_for('unlike_post', post_id=act.obj.id) }}{% else %}{{ url_for('like_post', post_id=act.obj.id) }}{% endif %}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                👍 {{ act.obj.likes.count() }}
+                                {% if act.obj.is_liked_by(current_user) %}已赞{% else %}点赞{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                    <!-- 评论列表 -->
+                    <div class="mt-2">
+                        <form method="post" action="{{ url_for('comment_post', post_id=act.obj.id) }}">
+                            <div class="input-group">
+                                <input type="text" name="content" class="form-control form-control-sm" placeholder="写评论...">
+                                <button class="btn btn-sm btn-secondary" type="submit">评论</button>
+                            </div>
+                        </form>
+                        <ul class="list-unstyled mt-2">
+                            {% for c in act.obj.comments.order_by(PostComment.created_at.desc()) %}
+                            <li>
+                                <b>{{ c.user.username }}</b>：{{ c.content }}
+                                <span class="text-muted" style="font-size:12px;">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% elif act.type == 'cook_record' %}
+                    <div>{{ act.obj.content }}</div>
+                    {% if act.obj.image_url %}
+                    <div class="activity-img-wrap">
+                        <img src="{{ act.obj.image_url }}">
+                    </div>
+                    {% endif %}
+                    {% elif act.type == 'comment' %}
+                    <div>{{ act.obj.content }}</div>
+                    {% endif %}
+                </div>
+
+            </li>
+            {% else %}
+            <li class="activity-item"><p class="text-muted">暂无动态</p></li>
+            {% endfor %}
+        </ul>
+
+        <!-- 分页控件 -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if activities_pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=activities_pagination.prev_num) }}">上一页</a>
+                </li>
+                {% endif %}
+                {% for page_num in activities_pagination.iter_pages %}
+                <li class="page-item {% if page_num == activities_pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=page_num) }}">{{ page_num }}</a>
+                </li>
+                {% endfor %}
+                {% if activities_pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('profile', user_id=user.id, page=activities_pagination.next_num) }}">下一页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
 </div>
+<script>
+    function markNotificationReadAndOpenChat(notificationId, senderId, senderUsername) {
+        fetch('/notification/' + notificationId + '/read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                // 如果没有CSRF保护，可以去掉下一行
+                'X-CSRFToken': getCookie('csrf_token')
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    // 标记已读成功后再打开聊天窗口
+                    if (senderId && senderUsername) {
+                        openChat(senderId, senderUsername);
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('操作失败');
+                }
+            });
+    }
+
+    function markNotificationReadAndOpenChat(notificationId, senderId, senderUsername) {
+        fetch('/notification/' + notificationId + '/read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            // 标记已读后再跳转
+            window.location.href = '/profile/' + CURRENT_USER_ID + '/followers?chat_user_id=' + senderId + '&chat_username=' + encodeURIComponent(senderUsername);
+        });
+    }
+
+    // 获取CSRF Token的辅助函数（如有需要）
+    function getCookie(name) {
+        let value = "; " + document.cookie;
+        let parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    // 示例 openChat 函数（请根据你的实际需求实现）
+    function openChat(userId, username) {
+        // 跳转到粉丝或关注列表，并带上参数
+        window.location.href = '/profile/' + {{ current_user.id }} + '/followers?chat_user_id=' + userId + '&chat_username=' + encodeURIComponent(username);
+    // 或 '/profile/' + {{ current_user.id }} + '/following?...'，根据你的业务选择
+    }
+</script>
 {% endblock %}

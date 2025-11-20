@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}的{{ '关注' if list_type == 'following' else '粉丝' }}列表{% endblock %}
+{% block content %}
+<h3 class="mb-4">{{ user.username }} 的{{ '关注' if list_type == 'following' else '粉丝' }}</h3>
+<ul class="list-group">
+    {% for u in users %}
+    <li class="list-group-item d-flex align-items-center">
+        <a href="{{ url_for('profile', user_id=u.id) }}" class="flex-grow-1">
+            {% if u.avatar_url %}
+            <img src="{{ u.avatar_url }}" alt="头像" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename='img/default_avatar.png') }}" alt="默认头像" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+            {% endif %}
+            {{ u.username }}
+        </a>
+        {% if current_user.is_authenticated and current_user.id != u.id %}
+        <button class="btn btn-sm btn-primary ms-2" onclick="openChat({{ u.id }}, '{{ u.username }}')">chat</button>
+        {% endif %}
+    </li>
+    {% else %}
+    <li class="list-group-item text-muted">暂无数据</li>
+    {% endfor %}
+</ul>
+
+<!-- 聊天弹窗 -->
+<div id="chatModal" class="modal" tabindex="-1" style="display:none;">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="background:#222; min-width:700px; min-height:480px;">
+      <div class="modal-header">
+        <h5 class="modal-title" id="chatTitle">聊天</h5>
+        <button type="button" class="btn-close" onclick="closeChat()" aria-label="关闭">&times;</button>
+      </div>
+      <div class="modal-body d-flex p-0" style="height:400px;">
+        <!-- 好友列表 -->
+        <div id="friendList" style="width:200px; background:#191c1f; border-right:1px solid #333; overflow-y:auto;">
+          <ul class="list-group list-group-flush">
+            {% for u in users %}
+            {% if current_user.id != u.id %}
+            <li class="list-group-item list-group-item-action bg-transparent text-light" style="cursor:pointer; border:none;"
+                onclick="openChat(u_id={{ u.id }}, username='{{ u.username }}')">
+              {% if u.avatar_url %}
+              <img src="{{ u.avatar_url }}" class="rounded-circle me-2" style="width:28px;height:28px;object-fit:cover;">
+              {% else %}
+              <img src="{{ url_for('static', filename='img/default_avatar.png') }}" class="rounded-circle me-2" style="width:28px;height:28px;object-fit:cover;">
+              {% endif %}
+              {{ u.username }}
+            </li>
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        <!-- 聊天内容 -->
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <div id="chatBody" style="flex:1; padding:16px; overflow-y:auto; background:#23272b;"></div>
+          <div class="p-3 border-top" style="background:#23272b;">
+            <div class="d-flex">
+              <textarea id="chatInput" class="form-control me-2" rows="2"></textarea>
+              <button class="btn btn-success" onclick="sendMessage()">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style>
+.modal { position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9999; }
+.modal-dialog { margin: 6vh auto; }
+.btn-close {
+    background: #fff;
+    border: 1px solid #888;
+    color: #222;
+    font-size: 1.5rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 2rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    z-index: 10001;
+    opacity: 0.95;
+}
+.btn-close:hover {
+    background: #f44336;
+    color: #fff;
+    border-color: #f44336;
+    opacity: 1;
+}
+.list-group-item-action:hover, .list-group-item-action.active {
+    background: #2a2d31 !important;
+}
+</style>
+<script>
+let chatUserId = null;
+function openChat(u_id, username) {
+    chatUserId = u_id;
+    document.getElementById('chatTitle').innerText = '与 ' + username + ' 聊天';
+    document.getElementById('chatModal').style.display = 'block';
+    loadMessages();
+}
+function closeChat() {
+    document.getElementById('chatModal').style.display = 'none';
+    document.getElementById('chatBody').innerHTML = '';
+    document.getElementById('chatInput').value = '';
+}
+
+    window.onload = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const chatUserId = urlParams.get('chat_user_id');
+        const chatUsername = urlParams.get('chat_username');
+        if (chatUserId && chatUsername) {
+            openChat(chatUserId, decodeURIComponent(chatUsername));
+        }
+    }
+
+    function loadMessages() {
+        if (!chatUserId) return;
+        fetch('/get_messages/' + chatUserId)
+            .then(resp => resp.json())
+            .then(data => {
+                let html = '';
+                data.forEach(msg => {
+                    if (msg.sender_id == {{ current_user.id }}) {
+                    // 我的消息，靠右
+                        html += `<div class="chat-message chat-message-self">
+                            <div>
+                                <span class="chat-author">我:</span> ${msg.content}
+                            </div>
+                            <span class="chat-time">${msg.timestamp}</span>
+                        </div>`;
+                    } else {
+                        // 对方消息，靠左
+                        html += `<div class="chat-message chat-message-other">
+                            <div>
+                                <span class="chat-author">对方:</span> ${msg.content}
+                            </div>
+                            <span class="chat-time">${msg.timestamp}</span>
+                        </div>`;
+                    }
+                });
+            document.getElementById('chatBody').innerHTML = html;
+            document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight;
+        });
+    }
+function sendMessage() {
+    let content = document.getElementById('chatInput').value.trim();
+    if (!content || !chatUserId) return;
+    fetch('/send_message', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'receiver_id=' + chatUserId + '&content=' + encodeURIComponent(content)
+    }).then(resp => resp.json()).then(data => {
+        if (data.status === 'ok') {
+            document.getElementById('chatInput').value = '';
+            loadMessages();
+        }
+    });
+}
+</script>
+{% endblock %}

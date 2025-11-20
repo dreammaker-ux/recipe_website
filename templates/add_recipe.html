@@ -6,8 +6,7 @@
     <div class="col-md-8">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="mb-4 text-success">发布新食谱</h2>
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.title.label(class="form-label") }}
@@ -52,8 +51,19 @@
                         </div>
                     </div>
                     <div class="mb-3">
+                        {{ form.image.label(class="form-label") }}
+                        {{ form.image(class="form-control") }}
+                        {% for error in form.image.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">可上传图片或填写下方图片链接</div>
+                    </div>
+                    <div class="mb-3">
                         {{ form.image_url.label(class="form-label") }}
                         {{ form.image_url(class="form-control") }}
+                        {% for error in form.image_url.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         {{ form.categories.label(class="form-label") }}

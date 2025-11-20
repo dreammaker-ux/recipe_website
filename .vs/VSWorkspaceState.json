@@ -1,11 +1,15 @@
 {
   "ExpandedNodes": [
     "",
-    "\\env",
     "\\static",
+    "\\static\\cook_records",
     "\\static\\css",
+    "\\static\\icons",
+    "\\static\\img",
+    "\\static\\music",
+    "\\static\\uploads",
     "\\templates"
   ],
-  "SelectedNode": "\\templates\\index.html",
+  "SelectedNode": "\\static\\css\\style.css",
   "PreviewInSolutionExplorer": false
 }
