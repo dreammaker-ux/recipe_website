@@ -1,7 +1,15 @@
 # 食光慢煮（recipe_website）
 
 一个基于 Flask和MySql 的美食社区网站，支持用户注册、登录、发布和收藏食谱、动态、评论、私信聊天、成就勋章等功能。
+
 <img width="2329" height="3209" alt="image" src="https://github.com/user-attachments/assets/38f0b0bc-ddaf-4e7e-9126-1c632ba28a2c" />
+
+<img width="2195" height="2855" alt="image" src="https://github.com/user-attachments/assets/f6a6a87e-44a7-4d6e-86ec-f4c5f5824148" />
+
+<img width="2208" height="6022" alt="image" src="https://github.com/user-attachments/assets/94d8b8ec-e638-4112-b004-ad820af6cb84" />
+
+<img width="2220" height="1400" alt="image" src="https://github.com/user-attachments/assets/5cfcca63-2ec1-4c27-9e67-74b51a6e20af" />
+
 
 ## 项目地址
 
