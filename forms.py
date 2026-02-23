@@ -54,3 +54,7 @@ class ProfileForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(), Length(min=2, max=20)])
     avatar = FileField('上传头像', validators=[FileAllowed(['jpg', 'png', 'jpeg'], '仅支持图片文件')])
     submit = SubmitField('保存')
+
+class AIChatForm(FlaskForm):
+    message = StringField('输入你的需求', validators=[DataRequired()])
+    submit = SubmitField('发送')
