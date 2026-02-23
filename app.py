@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify, Response, stream_with_context
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms import LoginForm, RegistrationForm, RecipeForm, CommentForm, ProfileForm, CookRecordForm, PostForm
 from config import Config
@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 from itertools import chain
 from math import ceil
 from db import db
-from utils import award_badge, check_and_award_achievements
+from utils import award_badge, check_and_award_achievements,  generate_qwen_stream
 
 
 ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg'}
@@ -673,5 +673,22 @@ def inject_first_unread_notification():
         return dict(first_unread_notification=first_unread)
     return dict(first_unread_notification=None)
 
+
+@app.route('/api/ai_chat_stream', methods=['POST'])
+def ai_chat_stream():
+    data = request.get_json()
+    user_message = data.get('message')
+    
+    if not user_message:
+        return {"error": "内容不能为空"}, 400
+        
+    # 使用 stream_with_context 保持 Flask 上下文，以便读取 config
+    return Response(
+        stream_with_context(generate_qwen_stream(user_message)), 
+        mimetype='text/event-stream'
+    )
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
