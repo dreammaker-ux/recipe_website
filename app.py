@@ -207,12 +207,20 @@ def add_recipe():
         image_url = None
         if hasattr(form, 'image') and form.image.data:
             filename = secure_filename(form.image.data.filename)
-            upload_dir = os.path.join('static', 'recipe_images')
+            
+            # 使用基于应用绝对路径的方法！确保一定找得到。
+            base_dir = os.path.abspath(os.path.dirname(__file__))
+            upload_dir = os.path.join(base_dir, 'static', 'recipe_images')
+            
+            # 如果没有这个文件夹，由系统去建
             if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
+                os.makedirs(upload_dir, exist_ok=True)
+                
             file_path = os.path.join(upload_dir, filename)
             form.image.data.save(file_path)
-            image_url = '/' + file_path.replace('\\', '/')
+            
+            # 兼容所有操作系统的 URL 生成方法
+            image_url = url_for('static', filename=f'recipe_images/{filename}')
         else:
             # 兼容填写图片链接的情况
             image_url = form.image_url.data or None
@@ -345,7 +353,28 @@ def edit_recipe(recipe_id):
         recipe.cooking_time = form.cooking_time.data
         recipe.difficulty = form.difficulty.data
         recipe.servings = form.servings.data
-        recipe.image_url = form.image_url.data
+        
+        # === 更新的部分：处理编辑时的图片上传逻辑 ===
+        if hasattr(form, 'image') and form.image.data:
+            filename = secure_filename(form.image.data.filename)
+            
+            # 使用基于应用绝对路径的方法！确保一定找得到。
+            base_dir = os.path.abspath(os.path.dirname(__file__))
+            upload_dir = os.path.join(base_dir, 'static', 'recipe_images')
+            
+            # 如果没有这个文件夹，由系统去建
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir, exist_ok=True)
+                
+            file_path = os.path.join(upload_dir, filename)
+            form.image.data.save(file_path)
+            
+            # 兼容所有操作系统的 URL 生成方法
+            recipe.image_url = url_for('static', filename=f'recipe_images/{filename}')
+        elif form.image_url.data:
+            # 兼容手动填写的网络图片链接的情况
+            recipe.image_url = form.image_url.data
+        # ==========================================
 
         category_ids = [int(cid) for cid in (form.categories.data or [])]
         if category_ids:
@@ -690,5 +719,5 @@ def ai_chat_stream():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
 
