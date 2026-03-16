@@ -2,13 +2,13 @@
 
 一个基于 Flask和MySql 的美食社区网站，支持用户注册、登录、发布和收藏食谱、动态、评论、私信聊天、成就勋章、烹饪模式等功能。
 
-<img width="2329" height="3209" alt="image" src="https://github.com/user-attachments/assets/38f0b0bc-ddaf-4e7e-9126-1c632ba28a2c" />
+<img width="2310" height="3039" alt="image" src="https://github.com/user-attachments/assets/65167776-42a6-4d49-a28b-e88970384339" />
 
-<img width="2195" height="2855" alt="image" src="https://github.com/user-attachments/assets/f6a6a87e-44a7-4d6e-86ec-f4c5f5824148" />
+<img width="2310" height="2791" alt="image" src="https://github.com/user-attachments/assets/5e934c2e-be5d-480c-8d3b-6a33925878b8" />
 
-<img width="2092" height="2835" alt="image" src="https://github.com/user-attachments/assets/d768c24d-b67d-42a0-ac18-0138d5c7f9b5" />
+<img width="2445" height="3239" alt="image" src="https://github.com/user-attachments/assets/7f03cf59-636a-46b2-9a24-52129cb207c5" />
 
-<img width="2220" height="1400" alt="image" src="https://github.com/user-attachments/assets/5cfcca63-2ec1-4c27-9e67-74b51a6e20af" />
+<img width="2310" height="1311" alt="image" src="https://github.com/user-attachments/assets/3e9362b4-d7f1-4862-af34-e1d957ea685b" />
 
 
 ## 项目地址
