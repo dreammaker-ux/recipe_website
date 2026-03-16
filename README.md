@@ -1,6 +1,7 @@
 # 食光慢煮（recipe_website）
 
 一个基于 Flask和MySql 的美食社区网站，支持用户注册、登录、发布和收藏食谱、动态、评论、私信聊天、成就勋章、烹饪模式等功能。
+现已部署到云端服务器，可访问ip地址：http://47.103.194.104:5000/
 
 <img width="2310" height="3039" alt="image" src="https://github.com/user-attachments/assets/65167776-42a6-4d49-a28b-e88970384339" />
 
