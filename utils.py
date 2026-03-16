@@ -1,7 +1,8 @@
 from models import Achievement, UserAchievement, Badge, UserBadge, db,Notification
-from openai import OpenAI
 from flask import current_app
 import json
+import requests
+from config import Config
 
 def award_achievement(user, achievement_name):
     achievement = Achievement.query.filter_by(name=achievement_name).first()
@@ -41,36 +42,63 @@ def check_and_award_achievements(user):
     # ...可扩展更多条件
 
 def generate_qwen_stream(prompt):
-    """调用 Qwen3 API 并以流式返回思考过程和最终结果"""
-    client = OpenAI(
-        api_key=current_app.config.get('DASHSCOPE_API_KEY'),
-        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
-    )
+    """使用 requests 替代 openai 库，调用兼容 API 并以流式返回"""
+    url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {current_app.config.get('DASHSCOPE_API_KEY')}",
+        "Content-Type": "application/json"
+    }
     
     system_prompt = """你是一个专业的厨师和食谱推荐助手。
     请根据用户的需求推荐菜谱，包括菜名、所需食材和简单的制作步骤。
     如果用户询问与烹饪无关的问题，请委婉地引导回美食话题。
     尽量保持回答简洁清晰，使用 Markdown 格式排版。"""
     
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": prompt}
-    ]
+    data = {
+        "model": "qwen3-max-2026-01-23", # 或替换为您实际使用的模型
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ],
+        "stream": True # 开启流式输出
+    }
     
     try:
-        completion = client.chat.completions.create(
-            model="qwen3-max-2026-01-23",
-            messages=messages,
-            stream=True
-        )
+        # 使用 requests 发送带有 stream=True 的请求
+        response = requests.post(url, headers=headers, json=data, stream=True)
         
-        for chunk in completion:
-            delta = chunk.choices[0].delta
-            
-                
-            #处理最终回复 (content)
-            if hasattr(delta, "content") and delta.content:
-                yield f"data: {json.dumps({'type': 'content', 'content': delta.content})}\n\n"
-                
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8')
+                # OpenAI / Qwen 兼容模式的流式数据以 'data: ' 开头
+                if decoded_line.startswith('data: ') and decoded_line != 'data: [DONE]':
+                    try:
+                        chunk = json.loads(decoded_line[6:]) # 去掉前缀 'data: '
+                        delta_content = chunk['choices'][0]['delta'].get('content', '')
+                        if delta_content:
+                            yield f"data: {json.dumps({'type': 'content', 'content': delta_content})}\n\n"
+                    except json.JSONDecodeError:
+                        continue
+                        
     except Exception as e:
         yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+
+def call_dashscope_api(prompt):
+    url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+    headers = {
+        "Authorization": f"Bearer {Config.DASHSCOPE_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "qwen-turbo", # 这里写您使用的模型，如 qwen-plus
+        "input": {
+            "prompt": prompt
+        },
+        "parameters": {}
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()['output']['text']
+    else:
+        return f"Error: {response.text}"
