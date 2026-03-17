@@ -1,16 +1,16 @@
-import os
+О╩©import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-very-strong-secret-key-in-case-env-is-not-set'
     MYSQL_HOST = os.environ.get('MYSQL_HOST') or 'localhost'
-    # ╪сиод╛хо╣дсц╩╖цШ xgy
+    # Е┼═Д╦┼И╩≤Х╝╓Г └Г■╗Ф┬╥Е░█ xgy
     MYSQL_USER = os.environ.get('MYSQL_USER') or 'xgy'
-    # ╪сиод╛хо╣дцэбК
+    # Е┼═Д╦┼И╩≤Х╝╓Г └Е╞├Г═│
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD') or '197111226716'
     MYSQL_DB = os.environ.get('MYSQL_DB') or 'recipe_website'
     
     SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # ╪сиод╛хо╣д╟ыа╤ API Key
+    # Е┼═Д╦┼И╩≤Х╝╓Г └Г≥╬Г┌╪ API Key
     DASHSCOPE_API_KEY = os.environ.get('DASHSCOPE_API_KEY') or 'sk-10da423f54e44c3ea22f28bb60b1f920'
