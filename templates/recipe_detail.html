@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            {% if recipe.image_url %}
+            <img src="{{ recipe.image_url }}" class="card-img-top" alt="{{ recipe.title }}" style="max-height: 400px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h1 class="card-title">{{ recipe.title }}</h1>
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('cook_mode', recipe_id=recipe.id) }}" class="btn btn-primary btn-sm me-2">
+                            进入烹饪模式
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('toggle_favorite', recipe_id=recipe.id) }}" class="mb-0">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                {% if current_user.is_authenticated and recipe.id in current_user.favorites|map(attribute='recipe_id') %}
+                                取消收藏
+                                {% else %}
+                                收藏
+                                {% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between text-muted mb-3">
+                    <div>
+                        <span>作者: <a href="{{ url_for('profile', user_id=recipe.author.id) }}">{{ recipe.author.username }}</a></span> |
+                        <span>发布时间: {{ recipe.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    <div>
+                        {% if avg_rating > 0 %}
+                        <span>评分: {{ "%.1f"|format(avg_rating) }}星</span>
+                        {% else %}
+                        <span>暂无评分</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if recipe.description %}
+                <p class="card-text">{{ recipe.description }}</p>
+                {% endif %}
+
+                <div class="row text-center mb-4">
+                    <div class="col-md-3">
+                        <div class="border rounded p-2">
+                            <h6>烹饪时间</h6>
+                            <p class="mb-0">{{ recipe.cooking_time }}分钟</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2">
+                            <h6>难度</h6>
+                            <p class="mb-0">{{ recipe.difficulty }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2">
+                            <h6>份量</h6>
+                            <p class="mb-0">{{ recipe.servings }}人份</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2">
+                            <h6>分类</h6>
+                            <p class="mb-0">
+                                {% if recipe.categories %}
+                                {% for c in recipe.categories %}
+                                <span class="badge bg-success">{{ c.name }}</span>
+                                {% endfor %}
+                                {% else %}
+                                未分类
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h4>食材</h4>
+                <div class="bg-light p-3 rounded mb-4">
+                    {{ recipe.ingredients|replace('\n', '<br>')|safe }}
+                </div>
+
+                <h4>步骤</h4>
+                <div class="bg-light p-3 rounded">
+                    {{ recipe.instructions|replace('\n', '<br>')|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 评论区域 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">评论 ({{ recipe.comments|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if current_user.is_authenticated %}
+                <form method="POST" action="{{ url_for('add_comment', recipe_id=recipe.id) }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.rating.label(class="form-label") }}
+                        {{ form.rating(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control", rows=3) }}
+                    </div>
+                    {{ form.submit(class="btn btn-success") }}
+                </form>
+                <hr>
+                {% endif %}
+
+                {% for comment in recipe.comments|sort(attribute='created_at', reverse=True) %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if comment.author.avatar_url %}
+                            <img src="{{ comment.author.avatar_url }}" alt="头像" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='img/default_avatar.png') }}" alt="默认头像" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+                            {% endif %}
+                            <strong>{{ comment.author.username }}</strong>
+                        </div>
+                        <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    <div class="mb-1">
+                        {% for i in range(comment.rating) %}★{% endfor %}
+                        {% for i in range(5-comment.rating) %}☆{% endfor %}
+                    </div>
+                    <p class="mb-0">{{ comment.content }}</p>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">暂无评论，快来发表第一条评论吧！</p>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">关于作者</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if recipe.author.avatar_url %}
+                <img src="{{ recipe.author.avatar_url }}" alt="头像" class="rounded-circle mb-2" style="width:64px;height:64px;object-fit:cover;">
+                {% else %}
+                <img src="{{ url_for('static', filename='img/default_avatar.png') }}" alt="默认头像" class="rounded-circle mb-2" style="width:64px;height:64px;object-fit:cover;">
+                {% endif %}
+                <h6>
+                    <a href="{{ url_for('profile', user_id=recipe.author.id) }}" class="text-decoration-none">
+                        {{ recipe.author.username }}
+                    </a>
+                </h6>
+                <p class="text-muted">注册时间: {{ recipe.author.created_at.strftime('%Y-%m-%d') }}</p>
+                <p>发布的食谱: {{ recipe.author.recipes|length }}</p>
+                {% if current_user.is_authenticated and current_user.id != recipe.author.id %}
+                {% if current_user.is_following(recipe.author) %}
+                <form method="POST" action="{{ url_for('unfollow', user_id=recipe.author.id) }}" style="display:inline;">
+                    <button class="btn btn-outline-secondary btn-sm">取消关注作者</button>
+                </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('follow', user_id=recipe.author.id) }}" style="display:inline;">
+                    <button class="btn btn-success btn-sm">关注作者</button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <h4 class="mt-5">烹饪打卡分享</h4>
+        {% for record in recipe.cook_records|sort(attribute='created_at', reverse=True) %}
+        <div class="mb-3 p-3 border rounded bg-light">
+            <div class="d-flex align-items-center mb-2">
+                {% if record.user.avatar_url %}
+                <img src="{{ record.user.avatar_url }}" class="rounded-circle me-2" style="width:32px;height:32px;">
+                {% endif %}
+                <strong>{{ record.user.username }}</strong>
+                <span class="ms-3 text-warning">
+                    {% for i in range(record.rating) %}★{% endfor %}
+                    {% for i in range(5-record.rating) %}☆{% endfor %}
+                </span>
+                <small class="text-muted ms-auto">{{ record.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            <div>{{ record.content }}</div>
+            {% if record.image_url %}
+            <div class="mt-2"><img src="{{ record.image_url }}" style="max-width:200px;"></div>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="text-muted">暂无打卡记录，快来第一个分享吧！</p>
+        {% endfor %}
+
+        <div class="card-body">
+            <div class="alert alert-secondary py-2 mb-3 text-center" style="font-size: 0.95em;">
+                根据当前菜谱的分类为您推荐以下相关菜谱，欢迎浏览更多美味！
+            </div>
+            {% set related_recipes = [] %}
+            {% for c in recipe.categories %}
+            {% for rel_recipe in c.recipes %}
+            {% if rel_recipe.id != recipe.id and rel_recipe not in related_recipes %}
+            {% set _ = related_recipes.append(rel_recipe) %}
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+
+            {% if related_recipes %}
+            {% for rel_recipe in related_recipes[:5] %}
+            <div class="mb-3">
+                <a href="{{ url_for('recipe_detail', recipe_id=rel_recipe.id) }}" class="text-decoration-none">
+                    <h6 class="mb-1">{{ rel_recipe.title }}</h6>
+                </a>
+                <small class="text-muted">{{ rel_recipe.cooking_time }}分钟 | {{ rel_recipe.difficulty }}</small>
+            </div>
+            {% if not loop.last %}<hr>{% endif %}
+            {% endfor %}
+            {% else %}
+            <p class="text-muted">暂无相关食谱</p>
+            {% endif %}
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">热门菜榜单</h5>
+            </div>
+            <div class="card-body">
+                {% if hot_recipes %}
+                {% for r in hot_recipes %}
+                <div class="mb-3">
+                    <a href="{{ url_for('recipe_detail', recipe_id=r.id) }}" class="text-decoration-none">
+                        <h6 class="mb-1">{{ r.title }}</h6>
+                    </a>
+                    <small class="text-muted">
+                        {{ r.cooking_time }}分钟 | {{ r.difficulty }}
+                    </small>
+                </div>
+                {% if not loop.last %}<hr>{% endif %}
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">暂无热门菜</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% if current_user.is_authenticated and recipe.author.id == current_user.id %}
+<div class="mb-3">
+    <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-warning btn-sm me-2">编辑</a>
+    <form method="POST" action="{{ url_for('delete_recipe', recipe_id=recipe.id) }}" style="display:inline;" onsubmit="return confirm('确定要删除该食谱吗？');">
+        <button type="submit" class="btn btn-danger btn-sm">删除</button>
+    </form>
+</div>
+{% endif %}
+<!-- 小贴士区域 -->
+<div class="alert alert-info mt-5 text-center" role="alert" style="font-size: 1.1em;">
+    <strong>烹饪小贴士：</strong> {{ creative_tip }}
+</div>
+
+{% endblock %}

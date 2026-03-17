@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}退出登录 - 美食食谱网站{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body text-center">
+                <h2 class="mb-4 text-success">您已成功退出登录</h2>
+                <p class="mb-4">感谢您的使用，欢迎再次访问美食食谱网站！</p>
+                <a href="{{ url_for('login') }}" class="btn btn-success btn-lg me-2">重新登录</a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-success btn-lg">返回首页</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<script>
+    setTimeout(function() {
+        window.location.href = "{{ url_for('index') }}";
+    }, 3000);
+</script>

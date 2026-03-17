@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}发表动态{% endblock %}
+{% block content %}
+<h3>发表动态</h3>
+<form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.content.label }}<br>
+        {{ form.content(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        {{ form.image.label }}<br>
+        {{ form.image(class="form-control") }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}
