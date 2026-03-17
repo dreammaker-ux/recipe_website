@@ -212,4 +212,3 @@ class Notification(db.Model):
 
 
 
- 
